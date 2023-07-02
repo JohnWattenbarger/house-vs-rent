@@ -28,6 +28,7 @@ type OutputData = {
   moneySpent: number;
   moneyAvailable: number;
   netInvestment: number;
+  netWorth: number;
 };
 
 // Define a function to calculate the monthly mortgage payment given the house cost, down payment and interest rate
@@ -64,11 +65,12 @@ function calculateOutput(
   if (option === "buy20") {
     downPayment = inputData.expectedHouseCost * 0.2;
   }
-  let houseValue = 0;
+  let houseValue = option === "rent" ? 0 : inputData.expectedHouseCost;
   let rentOrMortgage = option === "rent" ? inputData.currentRent : calculateMortgage(inputData.expectedHouseCost, downPayment, inputData.taxes, inputData.homeInterest, inputData.years);
   let moneySpent = rentOrMortgage * 12;
   let moneyAvailable = inputData.monthlyIncome;
   let netInvestment = moneyAvailable * 12 - moneySpent;
+  let netWorth = initialCash;
 
   // Loop through the years and calculate the output data for each year
   for (let year = 0; year <= inputData.years; year++) {
@@ -81,6 +83,7 @@ function calculateOutput(
       moneySpent,
       moneyAvailable,
       netInvestment,
+      netWorth
     });
 
     // subtract the down payment
@@ -94,15 +97,16 @@ function calculateOutput(
     }
 
     // Update the current values for the next year
-    houseValue = calculateHouseValue(option, inputData, year);
+    houseValue = calculateHouseValue(option, inputData, year + 1);
     initialCash = initialCash * (1 + INVESTMENT_RATE) + netInvestment; // Add the investment returns and the net investment to the initial cash
     rentOrMortgage =
       option === "rent"
         ? rentOrMortgage * (1 + INFLATION_RATE) // Increase the rent by the inflation rate
         : rentOrMortgage; // Keep the mortgage constant
     moneySpent = rentOrMortgage * 12; // Multiply the rent or mortgage by 12 months
-    // moneyAvailable = moneyAvailable; // Keep the money available constant
     netInvestment = moneyAvailable * 12 - moneySpent; // Subtract the money spent from the money available times 12 months
+    const paidOffHouse = (houseValue / 30) * ((year + 1 < 0 ? 0 : year + 1));
+    netWorth = initialCash + paidOffHouse;
   }
 
   // Return the output data array
@@ -178,7 +182,8 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
         <thead>
           <tr>
             <th>Year</th>
-            <th>Initial Cash</th>
+            <th>Networth</th>
+            <th>Cash</th>
             <th>House Value</th>
             <th>Rent</th>
             <th>Yearly Rent</th>
@@ -190,6 +195,7 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
           {props.data.map((row) => (
             <tr key={row.year}>
               <td>{row.year}</td>
+              <td>{formatCurrency(row.netWorth)}</td>
               <td>{formatCurrency(row.initialCash)}</td>
               <td>{formatCurrency(row.houseValue)}</td>
               <td>{formatCurrency(row.rentOrMortgage)}</td>
@@ -207,18 +213,32 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
 // Define a component to render a chart with the output data
 function OutputChart(props: { data1: OutputData[]; data2: OutputData[]; data3: OutputData[] }) {
   return (
-    <div>
-      <h3>Initial Cash Comparison</h3>
-      <LineChart width={500} height={400}>
-        <XAxis allowDuplicatedCategory={false} dataKey="year" />
-        <YAxis />
-        <Tooltip />
-        <Legend />
-        <Line type="monotone" data={props.data1} dataKey="initialCash" name="Renting" stroke="#8884d8" />
-        <Line type="monotone" data={props.data2} dataKey="initialCash" name="Buying with 5% Down Payment" stroke="#82ca9d" />
-        <Line type="monotone" data={props.data3} dataKey="initialCash" name="Buying with 20% Down Payment" stroke="#ffc658" />
-      </LineChart>
-    </div>
+    <Pivot>
+      <PivotItem headerText="Networth">
+        <h3>Networth</h3>
+        <LineChart width={500} height={400}>
+          <XAxis allowDuplicatedCategory={false} dataKey="year" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" data={props.data1} dataKey="netWorth" name="Renting" stroke="#8884d8" />
+          <Line type="monotone" data={props.data2} dataKey="netWorth" name="Buying with 5% Down Payment" stroke="#82ca9d" />
+          <Line type="monotone" data={props.data3} dataKey="netWorth" name="Buying with 20% Down Payment" stroke="#ffc658" />
+        </LineChart>
+      </PivotItem>
+      <PivotItem headerText="Cash">
+        <h3>Cash</h3>
+        <LineChart width={500} height={400}>
+          <XAxis allowDuplicatedCategory={false} dataKey="year" />
+          <YAxis />
+          <Tooltip />
+          <Legend />
+          <Line type="monotone" data={props.data1} dataKey="initialCash" name="Renting" stroke="#8884d8" />
+          <Line type="monotone" data={props.data2} dataKey="initialCash" name="Buying with 5% Down Payment" stroke="#82ca9d" />
+          <Line type="monotone" data={props.data3} dataKey="initialCash" name="Buying with 20% Down Payment" stroke="#ffc658" />
+        </LineChart>
+      </PivotItem>
+    </Pivot>
   );
 }
 
