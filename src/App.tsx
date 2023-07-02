@@ -115,28 +115,52 @@ function formatCurrency(num: number): string {
   return "$" + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
 }
 
-// Define a function to calculate the summary data for renting vs buying
+// Define a type for the summary data
+type SummaryData = {
+  cash: number;
+  homeValue: number;
+  netWorth: number;
+  difference: number;
+};
+
+/// Define a function to calculate the summary data for renting vs buying
 function calculateSummary(
-  inputData: InputData,
-  option1: "rent" | "buy5" | "buy20",
-  option2: "rent" | "buy5" | "buy20"
-): string {
-  // Get the output data for both options
-  const outputData1 = calculateOutput(inputData, option1);
-  const outputData2 = calculateOutput(inputData, option2);
+  inputData: InputData
+): { rent: SummaryData; buy5: SummaryData; buy20: SummaryData } {
+  // Get the output data for each option
+  const outputData1 = calculateOutput(inputData, 'rent');
+  const outputData2 = calculateOutput(inputData, 'buy5');
+  const outputData3 = calculateOutput(inputData, 'buy20');
 
-  // Get the final values for both options
-  const finalValue1 = outputData1[outputData1.length - 1].initialCash + (calculateHouseValue(option1, inputData, inputData.years));
-  const finalValue2 = outputData2[outputData2.length - 1].initialCash + (calculateHouseValue(option2, inputData, inputData.years));
+  // Get the final values for each option
+  const finalValue1 = outputData1[outputData1.length - 1].initialCash;
+  const finalValue2 = outputData2[outputData2.length - 1].initialCash + calculateHouseValue("buy5", inputData, inputData.years);
+  const finalValue3 = outputData3[outputData3.length - 1].initialCash + calculateHouseValue("buy20", inputData, inputData.years);
 
-  // Compare the final values and return a summary string
-  if (finalValue1 > finalValue2) {
-    return `You will have more money if you ${option1 === "rent" ? "rent" : "buy a house with " + (option1 === "buy5" ? "5%" : "20%") + " down payment"} than if you ${option2 === "rent" ? "rent" : "buy a house with " + (option2 === "buy5" ? "5%" : "20%") + " down payment"}. The difference is ${formatCurrency(finalValue1 - finalValue2)}.`;
-  } else if (finalValue1 < finalValue2) {
-    return `You will have more money if you ${option2 === "rent" ? "rent" : "buy a house with " + (option2 === "buy5" ? "5%" : "20%") + " down payment"} than if you ${option1 === "rent" ? "rent" : "buy a house with " + (option1 === "buy5" ? "5%" : "20%") + " down payment"}. The difference is ${formatCurrency(finalValue2 - finalValue1)}.`;
-  } else {
-    return `You will have the same amount of money if you ${option1 === "rent" ? "rent" : "buy a house with " + (option1 === "buy5" ? "5%" : "20%") + " down payment"} or if you ${option2 === "rent" ? "rent" : "buy a house with " + (option2 === "buy5" ? "5%" : "20%") + " down payment"}. The amount is ${formatCurrency(finalValue1)}.`;
-  }
+  // Find the best option by finding the maximum net worth
+  const bestOption = Math.max(finalValue1, finalValue2, finalValue3);
+
+  // Return an object with the summary data for each option
+  return {
+    rent: {
+      cash: finalValue1,
+      homeValue: 0,
+      netWorth: finalValue1,
+      difference: bestOption - finalValue1
+    },
+    buy5: {
+      cash: outputData2[outputData2.length - 1].initialCash,
+      homeValue: calculateHouseValue("buy5", inputData, inputData.years),
+      netWorth: finalValue2,
+      difference: bestOption - finalValue2
+    },
+    buy20: {
+      cash: outputData3[outputData3.length - 1].initialCash,
+      homeValue: calculateHouseValue("buy20", inputData, inputData.years),
+      netWorth: finalValue3,
+      difference: bestOption - finalValue3
+    }
+  };
 }
 
 // Define a component to render a table with the output data
@@ -195,13 +219,48 @@ function OutputChart(props: { data1: OutputData[]; data2: OutputData[]; data3: O
 }
 
 // Define a component to render a summary with the output data
-const OutputSummary = (props: { data: InputData }) => {
+function OutputSummary(props: { data: InputData }) {
+  // Get the summary data for each option
+  const summaryData = calculateSummary(props.data);
+
+  // Return the JSX element for the summary
   return (
     <div>
       <h3>Summary</h3>
-      <p>{calculateSummary(props.data, 'rent', 'buy5')}</p>
-      <p>{calculateSummary(props.data, 'rent', 'buy20')}</p>
-      <p>{calculateSummary(props.data, 'buy5', 'buy20')}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Option</th>
+            <th>Cash</th>
+            <th>Home Value</th>
+            <th>Total Net Worth</th>
+            <th>Difference from Best Option</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Rent</td>
+            <td>{formatCurrency(summaryData.rent.cash)}</td>
+            <td>{formatCurrency(summaryData.rent.homeValue)}</td>
+            <td>{formatCurrency(summaryData.rent.netWorth)}</td>
+            <td>{formatCurrency(summaryData.rent.difference)}</td>
+          </tr>
+          <tr>
+            <td>Buy with 5% Down Payment</td>
+            <td>{formatCurrency(summaryData.buy5.cash)}</td>
+            <td>{formatCurrency(summaryData.buy5.homeValue)}</td>
+            <td>{formatCurrency(summaryData.buy5.netWorth)}</td>
+            <td>{formatCurrency(summaryData.buy5.difference)}</td>
+          </tr>
+          <tr>
+            <td>Buy with 20% Down Payment</td>
+            <td>{formatCurrency(summaryData.buy20.cash)}</td>
+            <td>{formatCurrency(summaryData.buy20.homeValue)}</td>
+            <td>{formatCurrency(summaryData.buy20.netWorth)}</td>
+            <td>{formatCurrency(summaryData.buy20.difference)}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
