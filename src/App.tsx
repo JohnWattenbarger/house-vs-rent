@@ -183,14 +183,14 @@ function calculateSummary(
     buy5: {
       cash: outputData2[outputData2.length - 1].initialCash,
       homeValue: calculateHouseValue("buy5", inputData, inputData.years),
-      netWorth: finalValue2,
-      difference: bestOption - finalValue2
+      netWorth: outputData2[outputData2.length - 1].netWorth,
+      difference: bestOption - outputData2[outputData2.length - 1].netWorth
     },
     buy20: {
       cash: outputData3[outputData3.length - 1].initialCash,
       homeValue: calculateHouseValue("buy20", inputData, inputData.years),
-      netWorth: finalValue3,
-      difference: bestOption - finalValue3
+      netWorth: outputData3[outputData3.length - 1].netWorth,
+      difference: bestOption - outputData3[outputData3.length - 1].netWorth
     }
   };
 }
@@ -274,8 +274,10 @@ function OutputSummary(props: { data: InputData }) {
 
   // Return the JSX element for the summary
   return (
-    <div>
-      <h3>Summary</h3>
+    <Stack {...{
+      tokens: { childrenGap: 15 },
+      styles: { root: { paddingTop: 40 } },
+    }}>
       <Label style={{ fontSize: 20 }}>Best Option: <span style={{ paddingLeft: 25, fontWeight: "bold" }}>{bestOption}</span></Label>
       <table>
         <thead>
@@ -311,7 +313,7 @@ function OutputSummary(props: { data: InputData }) {
           </tr>
         </tbody>
       </table>
-    </div>
+    </Stack>
   );
 }
 
@@ -431,7 +433,7 @@ function App() {
       )}
       <Stack horizontal wrap horizontalAlign="space-around">
         <InputForm onSubmit={handleInputSubmit} />
-        <Stack style={{ minWidth: 700 }}>
+        <Stack>
           {inputData && (
             <>
               <Pivot>
