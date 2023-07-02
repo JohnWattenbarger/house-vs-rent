@@ -177,16 +177,18 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
 }
 
 // Define a component to render a chart with the output data
-const OutputChart = (props: { data: OutputData[]; title: string }) => {
+function OutputChart(props: { data1: OutputData[]; data2: OutputData[]; data3: OutputData[] }) {
   return (
     <div>
-      <h3>{props.title}</h3>
-      <LineChart width={800} height={400} data={props.data}>
+      <h3>Initial Cash Comparison</h3>
+      <LineChart width={800} height={400}>
         <XAxis dataKey="year" />
         <YAxis />
         <Tooltip />
         <Legend />
-        <Line type="monotone" dataKey="initialCash" stroke="#8884d8" />
+        <Line type="monotone" data={props.data1} dataKey="initialCash" name="Renting" stroke="#8884d8" />
+        <Line type="monotone" data={props.data2} dataKey="initialCash" name="Buying with 5% Down Payment" stroke="#82ca9d" />
+        <Line type="monotone" data={props.data3} dataKey="initialCash" name="Buying with 20% Down Payment" stroke="#ffc658" />
       </LineChart>
     </div>
   );
@@ -289,9 +291,11 @@ function App() {
                   <OutputTable data={calculateOutput(inputData, "buy20")} title="Buying with 20% Down Payment" />
                 </PivotItem>
                 <PivotItem headerText="Chart">
-                  <OutputChart data={calculateOutput(inputData, "rent")} title="Renting" />
-                  <OutputChart data={calculateOutput(inputData, "buy5")} title="Buying with 5% Down Payment" />
-                  <OutputChart data={calculateOutput(inputData, "buy20")} title="Buying with 20% Down Payment" />
+                  <OutputChart
+                    data1={calculateOutput(inputData, "rent")}
+                    data2={calculateOutput(inputData, "buy5")}
+                    data3={calculateOutput(inputData, "buy20")}
+                  />
                 </PivotItem>
                 <PivotItem headerText="Summary">
                   <OutputSummary data={inputData} />
