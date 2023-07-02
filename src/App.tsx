@@ -1,12 +1,36 @@
 import React, { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
-import { TextField, Pivot, PivotItem, Stack, PrimaryButton, Label } from "@fluentui/react";
+import { TextField, Pivot, PivotItem, Stack, PrimaryButton, Label, Icon, Layer, Popup, Overlay, FocusTrapZone, DefaultButton, mergeStyleSets, Separator } from "@fluentui/react";
 import './App.css';
+import { initializeIcons } from '@fluentui/font-icons-mdl2';
+import { useBoolean } from '@fluentui/react-hooks';
+
+initializeIcons();
 
 // Define some constants
 const INFLATION_RATE = 0.03;
 const INVESTMENT_RATE = 0.07;
 const DEFAULT_YEARS = 30;
+
+const popupStyles = mergeStyleSets({
+  root: {
+    background: 'rgba(0, 0, 0, 0.2)',
+    bottom: '0',
+    left: '0',
+    position: 'fixed',
+    right: '0',
+    top: '0',
+  },
+  content: {
+    background: 'white',
+    left: '50%',
+    maxWidth: '400px',
+    padding: '0 2em 2em',
+    position: 'absolute',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
+  },
+});
 
 // Define a type for the input data
 type InputData = {
@@ -376,13 +400,38 @@ function App() {
     setInputData(data); // Set the input data state variable to the submitted data
   }
 
+  const [isPopupVisible, { setTrue: showPopup, setFalse: hidePopup }] = useBoolean(false);
+
   // Return the JSX element for the app
   return (
     <div className="App">
-      <h1 style={{ textAlign: "center" }}>Money Calculator</h1>
-      <Stack horizontal horizontalAlign="space-around">
+      <h1 style={{ textAlign: "center" }}>Renting vs Buying Calculator <Icon onClick={showPopup} style={{ cursor: "pointer", verticalAlign: "middle" }} iconName="info" /></h1>
+      {isPopupVisible && (
+        <Layer>
+          <Popup
+            className={popupStyles.root}
+            role="dialog"
+            aria-modal="true"
+            onDismiss={hidePopup}
+          >
+            <Overlay onClick={hidePopup} />
+            <FocusTrapZone>
+              <Stack tokens={{ childrenGap: 10 }} role="document" className={popupStyles.content}>
+                <h2 style={{ paddingTop: 10, textAlign: "center" }}>About</h2>
+                <Separator></Separator>
+                <p>
+                  This tool is meant to show the difference in savings/networth one can accumulate if they rent vs buy.
+                </p>
+                <p>To calculate this we assume a 7% return on investment and a 3% increase in home value per year.</p>
+                <DefaultButton onClick={hidePopup}>Close Popup</DefaultButton>
+              </Stack>
+            </FocusTrapZone>
+          </Popup>
+        </Layer>
+      )}
+      <Stack horizontal wrap horizontalAlign="space-around">
         <InputForm onSubmit={handleInputSubmit} />
-        <Stack style={{ width: 600, maxWidth: 600 }}>
+        <Stack style={{ minWidth: 700 }}>
           {inputData && (
             <>
               <Pivot>
