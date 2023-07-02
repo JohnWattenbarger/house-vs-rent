@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
-import { TextField, Slider, Button, Pivot, PivotItem } from "@fluentui/react";
+import { TextField, Pivot, PivotItem, Stack, PrimaryButton } from "@fluentui/react";
+import './App.css';
 
 // Define some constants
 const INFLATION_RATE = 0.03;
@@ -151,10 +152,10 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
             <th>Year</th>
             <th>Initial Cash</th>
             <th>House Value</th>
-            <th>Rent/Mortgage Cost</th>
-            <th>Money Spent on Rent/Mortgage</th>
-            <th>Money Available</th>
-            <th>Net Investment Money</th>
+            <th>Rent</th>
+            <th>Yearly Rent</th>
+            <th>Monthly Income</th>
+            <th>Yearly Net Investment Money</th>
           </tr>
         </thead>
         <tbody>
@@ -222,54 +223,42 @@ const InputForm = (props: { onSubmit: (data: InputData) => void }) => {
   // Return the JSX element for the input form
   return (
     <form onSubmit={handleSubmit}>
-      <div>
-        <label htmlFor="starting-cash">Starting Cash</label>
-        <input
-          id="starting-cash"
+      <Stack {...{
+        tokens: { childrenGap: 15 },
+        styles: { root: { paddingLeft: 40, width: 300 } },
+      }}>
+        <TextField
+          label="Starting Cash"
           type="number"
-          value={startingCash}
-          onChange={(event) => setStartingCash(Number(event.target.value))}
+          defaultValue={startingCash.toString()}
+          onChange={(event, value) => setStartingCash(Number(value))}
         />
-      </div>
-      <div>
-        <label htmlFor="monthly-income">
-          Monthly Income (available for either rent or investing)
-        </label>
-        <input
-          id="monthly-income"
+        <TextField
+          label="Monthly Income (available for either rent or investing)"
           type="number"
-          value={monthlyIncome}
-          onChange={(event) => setMonthlyIncome(Number(event.target.value))}
+          defaultValue={monthlyIncome.toString()}
+          onChange={(event, value) => setMonthlyIncome(Number(value))}
         />
-      </div>
-      <div>
-        <label htmlFor="current-rent">Current Rent Cost</label>
-        <input
-          id="current-rent"
+        <TextField
+          label="Current Rent Cost"
           type="number"
-          value={currentRent}
-          onChange={(event) => setCurrentRent(Number(event.target.value))}
+          defaultValue={currentRent.toString()}
+          onChange={(event, value) => setCurrentRent(Number(value))}
         />
-      </div>
-      <div>
-        <label htmlFor="expected-house-cost">Expected House Cost</label>
-        <input
-          id="expected-house-cost"
+        <TextField
+          label="Expected House Cost"
           type="number"
-          value={expectedHouseCost}
-          onChange={(event) => setExpectedHouseCost(Number(event.target.value))}
+          defaultValue={expectedHouseCost.toString()}
+          onChange={(event, value) => setExpectedHouseCost(Number(value))}
         />
-      </div>
-      <div>
-        <label htmlFor="years">Years</label>
-        <input
-          id="years"
+        <TextField
+          label="Years"
           type="number"
-          value={years}
-          onChange={(event) => setYears(Number(event.target.value))}
+          defaultValue={years.toString()}
+          onChange={(event, value) => setYears(Number(value))}
         />
-      </div>
-      <button type="submit">Calculate</button>
+        <PrimaryButton type="submit">Calculate</PrimaryButton>
+      </Stack>
     </form>
   );
 }
@@ -287,27 +276,31 @@ function App() {
   // Return the JSX element for the app
   return (
     <div className="App">
-      <h1>Money Calculator</h1>
-      <InputForm onSubmit={handleInputSubmit} />
-      {inputData && (
-        <>
-          <Pivot>
-            <PivotItem headerText="Table">
-              <OutputTable data={calculateOutput(inputData, "rent")} title="Renting" />
-              <OutputTable data={calculateOutput(inputData, "buy5")} title="Buying with 5% Down Payment" />
-              <OutputTable data={calculateOutput(inputData, "buy20")} title="Buying with 20% Down Payment" />
-            </PivotItem>
-            <PivotItem headerText="Chart">
-              <OutputChart data={calculateOutput(inputData, "rent")} title="Renting" />
-              <OutputChart data={calculateOutput(inputData, "buy5")} title="Buying with 5% Down Payment" />
-              <OutputChart data={calculateOutput(inputData, "buy20")} title="Buying with 20% Down Payment" />
-            </PivotItem>
-            <PivotItem headerText="Summary">
-              <OutputSummary data={inputData} />
-            </PivotItem>
-          </Pivot>
-        </>
-      )}
+      <h1 style={{ textAlign: "center" }}>Money Calculator</h1>
+      <Stack horizontal horizontalAlign="space-around">
+        <InputForm onSubmit={handleInputSubmit} />
+        <Stack style={{ width: 600, maxWidth: 600 }}>
+          {inputData && (
+            <>
+              <Pivot>
+                <PivotItem headerText="Table">
+                  <OutputTable data={calculateOutput(inputData, "rent")} title="Renting" />
+                  <OutputTable data={calculateOutput(inputData, "buy5")} title="Buying with 5% Down Payment" />
+                  <OutputTable data={calculateOutput(inputData, "buy20")} title="Buying with 20% Down Payment" />
+                </PivotItem>
+                <PivotItem headerText="Chart">
+                  <OutputChart data={calculateOutput(inputData, "rent")} title="Renting" />
+                  <OutputChart data={calculateOutput(inputData, "buy5")} title="Buying with 5% Down Payment" />
+                  <OutputChart data={calculateOutput(inputData, "buy20")} title="Buying with 20% Down Payment" />
+                </PivotItem>
+                <PivotItem headerText="Summary">
+                  <OutputSummary data={inputData} />
+                </PivotItem>
+              </Pivot>
+            </>
+          )}
+        </Stack>
+      </Stack>
     </div>
   );
 }
