@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend } from "recharts";
-import { TextField, Pivot, PivotItem, Stack, PrimaryButton } from "@fluentui/react";
+import { TextField, Pivot, PivotItem, Stack, PrimaryButton, Label } from "@fluentui/react";
 import './App.css';
 
 // Define some constants
@@ -15,6 +15,8 @@ type InputData = {
   currentRent: number;
   expectedHouseCost: number;
   years: number;
+  homeInterest: number;
+  taxes: number;
 };
 
 // Define a type for the output data
@@ -32,15 +34,17 @@ type OutputData = {
 function calculateMortgage(
   houseCost: number,
   downPayment: number,
+  extraMonthlyFees: number,
   interestRate: number,
   years: number
 ): number {
   const principal = houseCost - downPayment;
-  const monthlyRate = interestRate / 12;
+  const monthlyRate = (interestRate / 12)// + extraMonthlyFees;
   const n = years * 12;
   const numerator = principal * monthlyRate * Math.pow(1 + monthlyRate, n);
   const denominator = Math.pow(1 + monthlyRate, n) - 1;
-  return numerator / denominator;
+  const mortgage = numerator / denominator;
+  return mortgage + extraMonthlyFees;
 }
 
 // Define a function to calculate the output data for renting, buying with 5% down or buying with 20% down
@@ -61,13 +65,13 @@ function calculateOutput(
     downPayment = inputData.expectedHouseCost * 0.2;
   }
   let houseValue = 0;
-  let rentOrMortgage = option === "rent" ? inputData.currentRent : calculateMortgage(inputData.expectedHouseCost, downPayment, option === "buy5" ? 0.03 : 0.025, inputData.years);
+  let rentOrMortgage = option === "rent" ? inputData.currentRent : calculateMortgage(inputData.expectedHouseCost, downPayment, inputData.taxes, inputData.homeInterest, inputData.years);
   let moneySpent = rentOrMortgage * 12;
   let moneyAvailable = inputData.monthlyIncome;
   let netInvestment = moneyAvailable * 12 - moneySpent;
 
   // Loop through the years and calculate the output data for each year
-  for (let year = 0; year < inputData.years; year++) {
+  for (let year = 0; year <= inputData.years; year++) {
     // Push the current values to the output data array
     outputData.push({
       year,
@@ -205,8 +209,8 @@ function OutputChart(props: { data1: OutputData[]; data2: OutputData[]; data3: O
   return (
     <div>
       <h3>Initial Cash Comparison</h3>
-      <LineChart width={800} height={400}>
-        <XAxis dataKey="year" />
+      <LineChart width={500} height={400}>
+        <XAxis allowDuplicatedCategory={false} dataKey="year" />
         <YAxis />
         <Tooltip />
         <Legend />
@@ -222,11 +226,13 @@ function OutputChart(props: { data1: OutputData[]; data2: OutputData[]; data3: O
 function OutputSummary(props: { data: InputData }) {
   // Get the summary data for each option
   const summaryData = calculateSummary(props.data);
+  const bestOption = summaryData.rent.difference === 0 ? "Renting" : summaryData.buy5.difference === 0 ? "Buy a house with 5% down payment" : "Buy a house with 20% down payment";
 
   // Return the JSX element for the summary
   return (
     <div>
       <h3>Summary</h3>
+      <Label style={{ fontSize: 20 }}>Best Option: <span style={{ paddingLeft: 25, fontWeight: "bold" }}>{bestOption}</span></Label>
       <table>
         <thead>
           <tr>
@@ -238,21 +244,21 @@ function OutputSummary(props: { data: InputData }) {
           </tr>
         </thead>
         <tbody>
-          <tr>
+          <tr style={summaryData.rent.difference === 0 ? { fontWeight: "bold", color: "green" } : {}}>
             <td>Rent</td>
             <td>{formatCurrency(summaryData.rent.cash)}</td>
             <td>{formatCurrency(summaryData.rent.homeValue)}</td>
             <td>{formatCurrency(summaryData.rent.netWorth)}</td>
             <td>{formatCurrency(summaryData.rent.difference)}</td>
           </tr>
-          <tr>
+          <tr style={summaryData.buy5.difference === 0 ? { fontWeight: "bold", color: "green" } : {}}>
             <td>Buy with 5% Down Payment</td>
             <td>{formatCurrency(summaryData.buy5.cash)}</td>
             <td>{formatCurrency(summaryData.buy5.homeValue)}</td>
             <td>{formatCurrency(summaryData.buy5.netWorth)}</td>
             <td>{formatCurrency(summaryData.buy5.difference)}</td>
           </tr>
-          <tr>
+          <tr style={summaryData.buy20.difference === 0 ? { fontWeight: "bold", color: "green" } : {}}>
             <td>Buy with 20% Down Payment</td>
             <td>{formatCurrency(summaryData.buy20.cash)}</td>
             <td>{formatCurrency(summaryData.buy20.homeValue)}</td>
@@ -268,17 +274,20 @@ function OutputSummary(props: { data: InputData }) {
 // Define a component to render the input fields and the calculate button
 const InputForm = (props: { onSubmit: (data: InputData) => void }) => {
   // Define some state variables to store the input values
-  const [startingCash, setStartingCash] = useState(138000);
   const [monthlyIncome, setMonthlyIncome] = useState(4000);
   const [currentRent, setCurrentRent] = useState(2000);
   const [expectedHouseCost, setExpectedHouseCost] = useState(700000);
+  const [startingCash, setStartingCash] = useState(.2 * expectedHouseCost);
   const [years, setYears] = useState(DEFAULT_YEARS);
-  // };
+  const [homeInterest, setHomeInterest] = useState(.07);
+  const [taxes, setTaxes] = useState(.001 * expectedHouseCost);
 
   // Define a function to handle the submit event
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); // Prevent the default behavior of reloading the page
-    props.onSubmit({ startingCash, monthlyIncome, currentRent, expectedHouseCost, years }); // Call the onSubmit prop function with the input data
+
+    const inputData: InputData = { startingCash, monthlyIncome, currentRent, expectedHouseCost, years, homeInterest, taxes };
+    props.onSubmit(inputData); // Call the onSubmit prop function with the input data
   }
 
   // Return the JSX element for the input form
@@ -288,12 +297,12 @@ const InputForm = (props: { onSubmit: (data: InputData) => void }) => {
         tokens: { childrenGap: 15 },
         styles: { root: { paddingLeft: 40, width: 300 } },
       }}>
-        <TextField
+        {/* <TextField
           label="Starting Cash"
           type="number"
           defaultValue={startingCash.toString()}
           onChange={(event, value) => setStartingCash(Number(value))}
-        />
+        /> */}
         <TextField
           label="Monthly Income (available for either rent or investing)"
           type="number"
@@ -310,7 +319,20 @@ const InputForm = (props: { onSubmit: (data: InputData) => void }) => {
           label="Expected House Cost"
           type="number"
           defaultValue={expectedHouseCost.toString()}
-          onChange={(event, value) => setExpectedHouseCost(Number(value))}
+          onChange={(event, value) => { setExpectedHouseCost(Number(value)); setTaxes((Number(value) * .001)); setStartingCash(.2 * Number(value)) }}
+        />
+        <TextField
+          label="Monthly Taxes and Other Fees"
+          type="number"
+          value={taxes.toString()}
+          defaultValue={taxes.toString()}
+          onChange={(event, value) => setTaxes(Number(value))}
+        />
+        <TextField
+          label="Home Interest Rate"
+          type="number"
+          defaultValue={"7"}
+          onChange={(event, value) => setHomeInterest((Number(value) / 100.0))}
         />
         <TextField
           label="Years"

@@ -31,9 +31,14 @@
 table,
 th,
 td {
-  border: 1px solid black;
+  border-bottom: 1px solid black;
   border-collapse: collapse;
   padding-right: 2;
+}
+
+th,
+td {
+  padding: 5px
 }
 
 @keyframes App-logo-spin {
