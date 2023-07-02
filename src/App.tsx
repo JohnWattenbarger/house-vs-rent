@@ -20,6 +20,7 @@ type InputData = {
 type OutputData = {
   year: number;
   initialCash: number;
+  houseValue: number;
   rentOrMortgage: number;
   moneySpent: number;
   moneyAvailable: number;
@@ -58,6 +59,7 @@ function calculateOutput(
   if (option === "buy20") {
     downPayment = inputData.expectedHouseCost * 0.2;
   }
+  let houseValue = 0;
   let rentOrMortgage = option === "rent" ? inputData.currentRent : calculateMortgage(inputData.expectedHouseCost, downPayment, option === "buy5" ? 0.03 : 0.025, inputData.years);
   let moneySpent = rentOrMortgage * 12;
   let moneyAvailable = inputData.monthlyIncome;
@@ -69,6 +71,7 @@ function calculateOutput(
     outputData.push({
       year,
       initialCash,
+      houseValue,
       rentOrMortgage,
       moneySpent,
       moneyAvailable,
@@ -86,6 +89,7 @@ function calculateOutput(
     }
 
     // Update the current values for the next year
+    houseValue = calculateHouseValue(option, inputData, year);
     initialCash = initialCash * (1 + INVESTMENT_RATE) + netInvestment; // Add the investment returns and the net investment to the initial cash
     rentOrMortgage =
       option === "rent"
@@ -98,6 +102,11 @@ function calculateOutput(
 
   // Return the output data array
   return outputData;
+}
+
+// Calculate what the house will be worth after a certain number of years
+function calculateHouseValue(type: string, inputData: InputData, years: number) {
+  return type === "rent" ? 0 : inputData.expectedHouseCost * Math.pow(1 + INFLATION_RATE, years);
 }
 
 // Define a function to format a number as currency
@@ -116,8 +125,8 @@ function calculateSummary(
   const outputData2 = calculateOutput(inputData, option2);
 
   // Get the final values for both options
-  const finalValue1 = outputData1[outputData1.length - 1].initialCash + (option1 === "rent" ? 0 : inputData.expectedHouseCost * Math.pow(1 + INFLATION_RATE, inputData.years));
-  const finalValue2 = outputData2[outputData2.length - 1].initialCash + (option2 === "rent" ? 0 : inputData.expectedHouseCost * Math.pow(1 + INFLATION_RATE, inputData.years));
+  const finalValue1 = outputData1[outputData1.length - 1].initialCash + (calculateHouseValue(option1, inputData, inputData.years));
+  const finalValue2 = outputData2[outputData2.length - 1].initialCash + (calculateHouseValue(option2, inputData, inputData.years));
 
   // Compare the final values and return a summary string
   if (finalValue1 > finalValue2) {
@@ -141,6 +150,7 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
           <tr>
             <th>Year</th>
             <th>Initial Cash</th>
+            <th>House Value</th>
             <th>Rent/Mortgage Cost</th>
             <th>Money Spent on Rent/Mortgage</th>
             <th>Money Available</th>
@@ -152,6 +162,7 @@ function OutputTable(props: { data: OutputData[]; title: string }) {
             <tr key={row.year}>
               <td>{row.year}</td>
               <td>{formatCurrency(row.initialCash)}</td>
+              <td>{formatCurrency(row.houseValue)}</td>
               <td>{formatCurrency(row.rentOrMortgage)}</td>
               <td>{formatCurrency(row.moneySpent)}</td>
               <td>{formatCurrency(row.moneyAvailable)}</td>
@@ -195,10 +206,10 @@ const OutputSummary = (props: { data: InputData }) => {
 // Define a component to render the input fields and the calculate button
 const InputForm = (props: { onSubmit: (data: InputData) => void }) => {
   // Define some state variables to store the input values
-  const [startingCash, setStartingCash] = useState(0);
-  const [monthlyIncome, setMonthlyIncome] = useState(0);
-  const [currentRent, setCurrentRent] = useState(0);
-  const [expectedHouseCost, setExpectedHouseCost] = useState(0);
+  const [startingCash, setStartingCash] = useState(138000);
+  const [monthlyIncome, setMonthlyIncome] = useState(4000);
+  const [currentRent, setCurrentRent] = useState(2000);
+  const [expectedHouseCost, setExpectedHouseCost] = useState(700000);
   const [years, setYears] = useState(DEFAULT_YEARS);
   // };
 
