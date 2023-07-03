@@ -11,6 +11,7 @@ initializeIcons();
 const INFLATION_RATE = 0.03;
 const INVESTMENT_RATE = 0.07;
 const DEFAULT_YEARS = 30;
+const MORTGAGE_LENGTH = 30;
 
 const popupStyles = mergeStyleSets({
   root: {
@@ -65,7 +66,8 @@ function calculateMortgage(
 ): number {
   const principal = houseCost - downPayment;
   const monthlyRate = (interestRate / 12)// + extraMonthlyFees;
-  const n = years * 12;
+  // const n = years * 12;
+  const n = MORTGAGE_LENGTH * 12;
   const numerator = principal * monthlyRate * Math.pow(1 + monthlyRate, n);
   const denominator = Math.pow(1 + monthlyRate, n) - 1;
   const mortgage = numerator / denominator;
@@ -165,9 +167,9 @@ function calculateSummary(
   const outputData3 = calculateOutput(inputData, 'buy20');
 
   // Get the final values for each option
-  const finalValue1 = outputData1[outputData1.length - 1].initialCash;
-  const finalValue2 = outputData2[outputData2.length - 1].initialCash + calculateHouseValue("buy5", inputData, inputData.years);
-  const finalValue3 = outputData3[outputData3.length - 1].initialCash + calculateHouseValue("buy20", inputData, inputData.years);
+  const finalValue1 = outputData1[inputData.years].netWorth;
+  const finalValue2 = outputData2[inputData.years].netWorth;
+  const finalValue3 = outputData3[inputData.years].netWorth;
 
   // Find the best option by finding the maximum net worth
   const bestOption = Math.max(finalValue1, finalValue2, finalValue3);
@@ -181,16 +183,16 @@ function calculateSummary(
       difference: bestOption - finalValue1
     },
     buy5: {
-      cash: outputData2[outputData2.length - 1].initialCash,
+      cash: outputData2[inputData.years].initialCash,
       homeValue: calculateHouseValue("buy5", inputData, inputData.years),
-      netWorth: outputData2[outputData2.length - 1].netWorth,
-      difference: bestOption - outputData2[outputData2.length - 1].netWorth
+      netWorth: finalValue2,
+      difference: bestOption - finalValue2
     },
     buy20: {
-      cash: outputData3[outputData3.length - 1].initialCash,
+      cash: outputData3[inputData.years].initialCash,
       homeValue: calculateHouseValue("buy20", inputData, inputData.years),
-      netWorth: outputData3[outputData3.length - 1].netWorth,
-      difference: bestOption - outputData3[outputData3.length - 1].netWorth
+      netWorth: finalValue3,
+      difference: bestOption - finalValue3
     }
   };
 }
